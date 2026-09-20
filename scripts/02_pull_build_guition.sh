@@ -26,7 +26,7 @@ REPO_DIR="${REPO_DIR:-${PROJECT_BASE}/COPIA2}"
 REPO_URL="${REPO_URL:-https://github.com/wpv10barza/ESP32-S3-4848S040.git}"
 REPO_REF="${REPO_REF:-main}"
 
-VENV_DIR="${REPO_DIR}/.venv}"
+VENV_DIR="${REPO_DIR}/.venv"
 ESPHOME_VERSION="${ESPHOME_VERSION:-2026.8.2}"
 PLATFORMIO_VERSION="${PLATFORMIO_VERSION:-6.2.0}"
 
@@ -248,7 +248,7 @@ else
 
     DUMMY_KEY="$(python - <<'PY'
 import base64
-print(base64.b64encode(b'CI_ONLY_32_BYTE_DUMMY_SECRET_KEY!!').decode())
+print(base64.b64encode(b'0123456789abcdef0123456789abcdef').decode())
 PY
 )"
 
