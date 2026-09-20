@@ -27,7 +27,17 @@ jobs:
       - name: Flash firmware
         env:
           SERIAL_PORT: ${{ inputs.serial_port }}
-        run: pio run -e panel_4848s040 -t upload --upload-port "$SERIAL_PORT"
+        run: |
+          set -Eeuo pipefail
+          if [[ "$SERIAL_PORT" == /dev/ttyS* ]]; then
+            echo "ERROR: $SERIAL_PORT is a legacy PC serial device; use /dev/ttyACM* or /dev/ttyUSB*."
+            exit 20
+          fi
+          if [[ ! -e "$SERIAL_PORT" ]]; then
+            echo "ERROR: serial port does not exist: $SERIAL_PORT"
+            exit 20
+          fi
+          pio run -e panel_4848s040 -t upload --upload-port "$SERIAL_PORT"
       - name: Capture serial boot log
         env:
           SERIAL_PORT: ${{ inputs.serial_port }}
