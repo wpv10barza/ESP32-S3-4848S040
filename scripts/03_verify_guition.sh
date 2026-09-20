@@ -25,7 +25,7 @@ done
 
 grep -Fq 'github://alaltitov/esphome@1b487af0ef26ff8e7908d34e415d99cc13fc1f98' src/main.yaml
 grep -Fq 'external_components:' src/main.yaml
-grep -Fq '^lvgl:' src/main.yaml
+grep -Eq '^lvgl:' src/main.yaml
 grep -Fq 'platform: gt911' src/main.yaml
 grep -Fq 'platform: st7701s' src/main.yaml
 grep -Fq 'width: 480' src/main.yaml
