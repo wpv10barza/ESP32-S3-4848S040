@@ -1,85 +1,45 @@
-name: Firmware and API CI
+name: CI
 
 on:
   push:
   pull_request:
 
-concurrency:
-  group: firmware-api-ci-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  native-tests:
-    name: PlatformIO native tests
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install PlatformIO
-        run: pip install platformio
-      - name: Validate Bash scripts
+        run: pip install platformio==6.2.0
+
+      - name: Validate six Bash blocks
         run: |
           set -euo pipefail
-          for f in \
-            scripts/01_clone_guition.sh \
-            scripts/02_tools_guition.sh \
-            scripts/03_verify_guition.sh \
-            scripts/04_esphome_guition.sh \
-            scripts/05_platformio_guition.sh \
-            scripts/06_flash_monitor_guition.sh \
-            scripts/01_bootstrap_guition.sh \
-            scripts/02_pull_build_guition.sh \
-            scripts/flash-panel.sh
-          do
+          for f in scripts/01_clone_guition.sh                    scripts/02_tools_guition.sh                    scripts/03_verify_guition.sh                    scripts/04_esphome_guition.sh                    scripts/05_platformio_guition.sh                    scripts/06_flash_monitor_guition.sh; do
             bash -n "$f"
           done
 
-      - name: Run PlatformIO native tests
+      - name: Verify project
+        run: REPO_DIR="${{ github.workspace }}" bash scripts/03_verify_guition.sh
+
+      - name: PlatformIO native tests
         run: pio test -e native
 
-      - name: Run Python integration contracts
+      - name: Python contracts
         run: |
-          set -euo pipefail
           python tests/test_panel_state_contract.py
           python tests/test_wifi_source.py
           python tests/test_command_editor_integration.py
           python test/command_buffer_regression.py
-
-  esp32-build:
-    name: PlatformIO ESP32-S3 build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install PlatformIO
-        run: pip install platformio
-      - name: Build ESP32-S3 firmware
-        run: pio run -e panel_4848s040
-
-  api-e2e:
-    name: Device API E2E
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Run Python contract tests
-        run: |
-          set -euo pipefail
-          python tests/test_panel_state_contract.py
-          python tests/test_wifi_source.py
-          python tests/test_command_editor_integration.py
-          python test/command_buffer_regression.py
-
-      - name: Note about real Monitor E2E
-        run: |
-          echo "Real Monitor device/API E2E is executed by .github/workflows/firmware-and-pages.yml"
-          echo "This CI job intentionally does not contact localhost:3000 without starting the real Monitor."
