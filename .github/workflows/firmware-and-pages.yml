@@ -36,10 +36,12 @@ jobs:
           BUILD_MODE: validate
           BUILD_PLATFORMIO: "0"
           SKIP_GIT_UPDATE: "1"
+          PROJECT_BASE: ${{ github.workspace }}
+          REPO_DIR: ${{ github.workspace }}
         run: |
           set -euo pipefail
           chmod +x scripts/02_pull_build_guition.sh
-          ./scripts/02_pull_build_guition.sh --mode validate
+          ./scripts/02_pull_build_guition.sh
 
       - uses: actions/setup-node@v4
         with:
