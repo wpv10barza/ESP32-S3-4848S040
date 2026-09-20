@@ -5,6 +5,13 @@ from http.client import HTTPConnection
 from backend.device_api import make_server
 
 
+def running_server():
+    server = make_server()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
+
+
 def request(server, method, path, payload=None):
     conn = HTTPConnection(server.server_address[0], server.server_address[1], timeout=5)
     body = json.dumps(payload).encode() if payload is not None else None
@@ -17,21 +24,24 @@ def request(server, method, path, payload=None):
     return status, data
 
 
+def stop(server):
+    server.shutdown()
+    server.server_close()
+
+
 def test_health_is_not_physical_device_health():
-    server = make_server()
+    server = running_server()
     try:
         status, body = request(server, "GET", "/api/device/v1/health")
         assert status == 200
         assert body["status"] == "ok"
         assert body["physical_device"] == "unknown"
     finally:
-        server.server_close()
+        stop(server)
 
 
 def test_pending_confirmation_polling_e2e():
-    server = make_server()
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
+    server = running_server()
     try:
         status, created = request(
             server,
@@ -66,12 +76,11 @@ def test_pending_confirmation_polling_e2e():
         assert status == 200
         assert final["state"] == "applied"
     finally:
-        server.shutdown()
-        server.server_close()
+        stop(server)
 
 
 def test_empty_command_is_rejected():
-    server = make_server()
+    server = running_server()
     try:
         status, body = request(
             server,
@@ -82,4 +91,4 @@ def test_empty_command_is_rejected():
         assert status == 400
         assert body["error"] == "empty_command"
     finally:
-        server.server_close()
+        stop(server)
