@@ -11,21 +11,12 @@ cd "${REPO_DIR}"
 source "${VENV_DIR}/bin/activate"
 command -v pio >/dev/null || { echo "[ERROR] PlatformIO missing."; exit 1; }
 
-mkdir -p .ci/bin
-
-g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/test_command_buffer_native.cpp -o .ci/bin/command_buffer_native
-.ci/bin/command_buffer_native
-
-g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_command_text_viewport/test_main.cpp -o .ci/bin/command_text_viewport_test
-.ci/bin/command_text_viewport_test
-
-g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_virtual_keyboard/test_main.cpp -o .ci/bin/virtual_keyboard_hit_test
-.ci/bin/virtual_keyboard_hit_test
-
 python tests/test_panel_state_contract.py
 python tests/test_wifi_source.py
 python tests/test_command_editor_integration.py
 python test/command_buffer_regression.py
+
+pio test -e native
 
 pio run -e panel_4848s040
 
@@ -34,4 +25,4 @@ pio run -e panel_4848s040
   exit 2
 }
 
-printf '\n[OK] BLOCK 5 — native regressions, API contracts and panel_4848s040 build passed.\n'
+printf '\n[OK] BLOCK 5 — API contracts, PlatformIO native tests and panel_4848s040 build passed.\n'
