@@ -193,10 +193,10 @@ Block 2 now has two explicit modes:
 
 ```bash
 # Real local device build: requires src/secrets.yaml
-./scripts/02_pull_build_guition.sh --mode real
+BUILD_MODE=real ./scripts/02_pull_build_guition.sh
 
 # CI / structure validation: isolated temporary ESPHome workspace
-./scripts/02_pull_build_guition.sh --mode validate
+BUILD_MODE=validate ./scripts/02_pull_build_guition.sh
 ```
 
 In `real` mode, Block 2 requires non-empty `wifi_ssid`, `wifi_password`, `display_key` and `display_ota` in the local ignored `src/secrets.yaml`.
