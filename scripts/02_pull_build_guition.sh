@@ -245,6 +245,8 @@ else
 
     TMP_ESPHOME_DIR="$(mktemp -d "${LOG_DIR}/esphome-validate.XXXXXX")"
     cp -a "${REPO_DIR}/src/." "${TMP_ESPHOME_DIR}/"
+    rm -f "${TMP_ESPHOME_DIR}/secrets.yaml"
+    rm -rf "${TMP_ESPHOME_DIR}/.esphome"
 
     DUMMY_KEY="$(python - <<'PY'
 import base64
