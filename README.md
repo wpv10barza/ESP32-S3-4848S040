@@ -185,30 +185,45 @@ pio run -e panel_4848s040
 
 La carga física requiere la placa conectada al entorno WSL/Ubuntu y un `include/local_config.h` local con las credenciales y URL del backend.
 
-## 🔐 Secret-aware Block 2
+## 🔐 Flujo de 6 bloques
 
-The upstream ESPHome base is mirrored in this repository, including `src/main.yaml`. That file intentionally uses ESPHome `!secret` references for Wi-Fi, API encryption and OTA credentials; real credentials are never committed.
+El proceso de WSL/Ubuntu quedó separado para que cada bloque pueda ejecutarse y reanudarse sin repetir instalaciones ni compilaciones.
 
-Block 2 now has two explicit modes:
+| Bloque | Función | Reanuda desde |
+|---|---|---|
+| 1 | Clona/actualiza el repositorio propio | Git solamente |
+| 2 | Crea `.venv` e instala ESPHome 2026.8.2 + PlatformIO 6.2.0 | Punto de interrupción de `pip` |
+| 3 | Verifica árbol, LVGL, GT911, ST7701S, i18n y 3C | Integridad |
+| 4 | Valida y compila ESPHome | Firmware LVGL |
+| 5 | Ejecuta regresiones y compila PlatformIO 3C | Firmware 3C |
+| 6 | Flashea y abre monitor serie | Hardware físico |
+
+### Ejecución normal
 
 ```bash
-# Real local device build: requires src/secrets.yaml
-BUILD_MODE=real ./scripts/02_pull_build_guition.sh
-
-# CI / structure validation: isolated temporary ESPHome workspace
-BUILD_MODE=validate ./scripts/02_pull_build_guition.sh
+cd ~/project/ESP32-S3-4848S040
+bash scripts/01_clone_guition.sh
+bash scripts/02_tools_guition.sh
+BUILD_MODE=validate bash scripts/03_verify_guition.sh
+BUILD_MODE=validate bash scripts/04_esphome_guition.sh
+bash scripts/05_platformio_guition.sh
+PORT=/dev/ttyACM0 bash scripts/06_flash_monitor_guition.sh
 ```
 
-In `real` mode, Block 2 requires non-empty `wifi_ssid`, `wifi_password`, `display_key` and `display_ota` in the local ignored `src/secrets.yaml`.
+### Reanudar desde la interrupción observada
 
-In `validate` mode, Block 2 copies `src/` to a temporary directory and creates a temporary `secrets.yaml` there. The real `src/secrets.yaml`, when present, is untouched. The temporary build is never treated as a production flashing artifact.
+La instalación anterior se detuvo después de desinstalar PlatformIO 6.1.19. No es necesario clonar ni repetir los bloques anteriores: vuelve a ejecutar solamente el Bloque 2.
 
-GitHub Actions calls the same validation mode with `BUILD_PLATFORMIO=0` so the `!secret` graph is actually parsed and compiled without requiring production credentials. The separate PlatformIO firmware remains validated by its existing native and ESP32-S3 jobs.
+```bash
+cd ~/project/ESP32-S3-4848S040
+bash scripts/02_tools_guition.sh
+bash scripts/03_verify_guition.sh
+BUILD_MODE=validate bash scripts/04_esphome_guition.sh
+bash scripts/05_platformio_guition.sh
+PORT=/dev/ttyACM0 bash scripts/06_flash_monitor_guition.sh
+```
 
-### Upstream mirror status
+El Bloque 2 está diseñado para ser idempotente: si `pip install platformio==6.2.0` fue interrumpido después de desinstalar 6.1.19, volver a lanzarlo completa la instalación y comprueba la versión final. Los bloques 1 y 2 ya no llaman entre sí, no compilan firmware y no ejecutan verificaciones duplicadas.
 
-The ESPHome/LVGL base is synchronized from `alaltitov/Guition-ESP32-S3-4848S040` release branch `2026.8.2`.
+Los nombres antiguos se mantienen como wrappers de compatibilidad: `01_bootstrap_guition.sh`, `02_pull_build_guition.sh` y `flash-panel.sh`.
 
-The repository's only remote ESPHome external component is `alaltitov/esphome` for `i18n`. The upstream `dev` branch currently carries the i18n implementation required by this firmware; its HEAD was verified as `1b487af0ef26ff8e7908d34e415d99cc13fc1f98` on 2026-09-19. The dependency is pinned to that exact commit in `src/main.yaml` instead of floating on `@dev`, improving build reproducibility without switching to the incompatible `main` component revision.
-
-The fork keeps the complete upstream file tree and adds the 3C/API/CI layer on top.
