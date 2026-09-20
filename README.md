@@ -184,3 +184,27 @@ pio run -e panel_4848s040
 ```
 
 La carga física requiere la placa conectada al entorno WSL/Ubuntu y un `include/local_config.h` local con las credenciales y URL del backend.
+
+## 🔐 Secret-aware Block 2
+
+The upstream ESPHome base is mirrored in this repository, including `src/main.yaml`. That file intentionally uses ESPHome `!secret` references for Wi-Fi, API encryption and OTA credentials; real credentials are never committed.
+
+Block 2 now has two explicit modes:
+
+```bash
+# Real local device build: requires src/secrets.yaml
+./scripts/02_pull_build_guition.sh --mode real
+
+# CI / structure validation: isolated temporary ESPHome workspace
+./scripts/02_pull_build_guition.sh --mode validate
+```
+
+In `real` mode, Block 2 requires non-empty `wifi_ssid`, `wifi_password`, `display_key` and `display_ota` in the local ignored `src/secrets.yaml`.
+
+In `validate` mode, Block 2 copies `src/` to a temporary directory and creates a temporary `secrets.yaml` there. The real `src/secrets.yaml`, when present, is untouched. The temporary build is never treated as a production flashing artifact.
+
+GitHub Actions calls the same validation mode with `BUILD_PLATFORMIO=0` so the `!secret` graph is actually parsed and compiled without requiring production credentials. The separate PlatformIO firmware remains validated by its existing native and ESP32-S3 jobs.
+
+### Upstream mirror status
+
+The ESPHome/LVGL base is synchronized from `alaltitov/Guition-ESP32-S3-4848S040` release branch `2026.8.2`. The fork keeps the complete upstream file tree and adds the 3C/API/CI layer on top.
