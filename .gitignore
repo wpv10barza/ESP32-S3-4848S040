@@ -12,3 +12,11 @@ src/secrets.yaml
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# 3C local configuration and generated firmware
+include/local_config.h
+*.bin
+*.elf
+*.map
+credentials.json
+.env
