@@ -144,3 +144,43 @@ Un runner GitHub alojado en la nube no puede demostrar que una placa ESP32-S3 f�
 Para eso se añadió el workflow manual `.github/workflows/physical-validation.yml`, pensado para un runner **self-hosted** conectado físicamente a la placa. La evidencia se conserva como artefacto de logs serie.
 
 **No se marca como validación física hasta ejecutar ese workflow con hardware conectado.**
+
+---
+
+## Integración ESP32 firmware backend 3C
+
+El repositorio conserva la interfaz original **ESPHome/LVGL** para el panel 480×480 y agrega un firmware PlatformIO independiente para el flujo 3C.
+
+### Panel 480×480 + GT911
+- Firmware activo: `platformio/src/panel_4848s040/main.cpp`
+- Driver de pantalla: ST7701 mediante Arduino-GFX.
+- Táctil: GT911 por I²C.
+- Editor real de comandos: `commandBuffer`, cursor, inserción, backspace, delete y desplazamiento horizontal.
+- Teclado virtual: letras, números, símbolos, espacio, backspace, enter y cambio `ABC/123`.
+- Zonas táctiles principales: `PROBAR WSL` y `ENVIAR 3C`.
+
+### API 3C
+Se incorporan el backend de pruebas y su contrato:
+- `backend/device_api.py`
+- `contract/device-command-v1.json`
+- `GET /api/device/v1/health`
+- `POST /api/device/v1/commands`
+- `GET /api/device/v1/commands/{command_id}`
+- confirmación/rechazo humano antes del estado final.
+- polling del firmware cada 2.5 s.
+- bloqueo de comandos vacíos.
+
+### CI y pruebas
+Se incorporan los workflows y pruebas del backend, además de las pruebas PlatformIO existentes. Los tests C++ del backend se organizan en suites independientes para evitar múltiples `main()` en un mismo ejecutable.
+
+### LVGL
+La base ESPHome/LVGL original no se reemplaza. El entorno `panel_4848s040` incluye LVGL 8.4 como dependencia, pero la UI 3C importada del ZIP actualmente dibuja con Arduino-GFX y lee GT911 directamente. Esto mantiene separadas las dos capas de interfaz en lugar de mezclar dos motores de renderizado en el mismo ciclo de dibujo.
+
+### Compilación y carga física
+
+```bash
+pio run -e panel_4848s040
+./scripts/flash-panel.sh
+```
+
+La carga física requiere la placa conectada al entorno WSL/Ubuntu y un `include/local_config.h` local con las credenciales y URL del backend.
