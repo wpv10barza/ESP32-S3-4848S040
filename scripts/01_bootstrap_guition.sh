@@ -9,18 +9,13 @@ set -Eeuo pipefail
 PROJECT_BASE="${PROJECT_BASE:-${HOME}/project}"
 REPO_DIR="${REPO_DIR:-${PROJECT_BASE}/COPIA2}"
 
-# IMPORTANT:
-# This is YOUR merged repository. Do not bootstrap from the upstream
+# This is YOUR merged repository. Never bootstrap from the upstream
 # Guition repository here, otherwise the 3C/API/CI layer is lost.
 REPO_URL="${REPO_URL:-https://github.com/wpv10barza/ESP32-S3-4848S040.git}"
 REPO_REF="${REPO_REF:-main}"
 
-# ESPHome is the runtime that provides the LVGL/GT911/ST7701S layer.
 ESPHOME_VERSION="${ESPHOME_VERSION:-2026.8.2}"
-
-# PlatformIO is used by the independent 3C firmware layer.
 PLATFORMIO_VERSION="${PLATFORMIO_VERSION:-6.2.0}"
-
 VENV_DIR="${REPO_DIR}/.venv"
 
 on_error() {
@@ -51,13 +46,8 @@ echo " GUITION ESP32-S3-4848S040"
 echo " BLOCK 1 | CLONE / VENV / ESPHOME + PLATFORMIO / VERIFY"
 echo "============================================================"
 
-# ------------------------------------------------------------
-# REQUIREMENTS
-# ------------------------------------------------------------
-
 require_cmd git
 require_cmd python3
-
 python3 -m venv --help >/dev/null 2>&1 || die "python3-venv no está disponible."
 
 mkdir -p "${PROJECT_BASE}"
@@ -92,17 +82,13 @@ else
         echo
         echo "Debe apuntar a:"
         echo "  ${REPO_URL}"
-        echo
-        echo "Corrija con:"
-        echo "  git remote set-url origin ${REPO_URL}"
         exit 2
     }
 
     echo
     echo "=== ACTUALIZANDO REPOSITORIO ==="
     git fetch --tags --prune origin
-
-    git checkout "${REPO_REF}" >/dev/null 2>&1 ||         die "No se pudo seleccionar la referencia ${REPO_REF}."
+    git checkout "${REPO_REF}" >/dev/null 2>&1 || die "No se pudo seleccionar ${REPO_REF}."
 
     if git symbolic-ref -q HEAD >/dev/null 2>&1; then
         git pull --ff-only origin "${REPO_REF}" ||             die "La rama ${REPO_REF} tiene cambios locales/no fast-forward."
@@ -111,19 +97,13 @@ fi
 
 cd "${REPO_DIR}"
 
-# ------------------------------------------------------------
-# VERIFY GIT SOURCE
-# ------------------------------------------------------------
-
 echo
 echo "=== GIT ==="
 echo "Remote:"
 git remote -v
-
 echo
 echo "Ref:"
 git describe --always --tags --dirty
-
 echo
 echo "Commit:"
 git log -1 --oneline --decorate
@@ -142,37 +122,22 @@ fi
 # shellcheck disable=SC1091
 source "${VENV_DIR}/bin/activate"
 
-python -m pip install     --disable-pip-version-check     --upgrade     pip setuptools wheel
-
-# ------------------------------------------------------------
-# ESPHOME
-# ------------------------------------------------------------
+python -m pip install --disable-pip-version-check --upgrade pip setuptools wheel
 
 echo
 echo "=== INSTALL ESPHOME ==="
-
-python -m pip install     --disable-pip-version-check     "esphome==${ESPHOME_VERSION}"
+python -m pip install --disable-pip-version-check "esphome==${ESPHOME_VERSION}"
 
 echo
 echo "Python:"
 python --version
-
 echo
 echo "ESPHome:"
 esphome version
 
-grep -Eq "ESPHome version: ${ESPHOME_VERSION}|^${ESPHOME_VERSION}$"     <(esphome version) || {
-    echo "[WARN] La salida de 'esphome version' no coincide literalmente con ${ESPHOME_VERSION}."
-}
-
-# ------------------------------------------------------------
-# PLATFORMIO
-# ------------------------------------------------------------
-
 echo
 echo "=== INSTALL PLATFORMIO ==="
-
-python -m pip install     --disable-pip-version-check     "platformio==${PLATFORMIO_VERSION}"
+python -m pip install --disable-pip-version-check "platformio==${PLATFORMIO_VERSION}"
 
 echo
 echo "PlatformIO:"
@@ -218,31 +183,34 @@ for path in "${required_dirs[@]}"; do
 done
 
 # ------------------------------------------------------------
-# VERIFY ESPHOME LVGL / GT911 / ST7701S
+# VERIFY ESPHOME UI LAYER
+#
+# IMPORTANT:
+# src/main.yaml uses !secret. Block 1 does NOT compile it.
+# Block 2 is responsible for the secret-aware config/compile
+# using either real credentials or an isolated temporary copy.
 # ------------------------------------------------------------
 
 echo
 echo "=== VERIFY ESPHOME UI LAYER ==="
 
-grep -q '^lvgl:' src/main.yaml     || die "src/main.yaml no declara el componente LVGL."
+grep -q '^lvgl:' src/main.yaml || die "src/main.yaml no declara LVGL."
+grep -q 'platform: gt911' src/main.yaml || die "src/main.yaml no declara GT911."
+grep -q 'platform: st7701s' src/main.yaml || die "src/main.yaml no declara ST7701S."
+grep -q 'width: 480' src/main.yaml || die "No se encontró width: 480."
+grep -q 'height: 480' src/main.yaml || die "No se encontró height: 480."
+grep -q '!secret wifi_ssid' src/main.yaml || die "Falta !secret wifi_ssid."
+grep -q '!secret wifi_password' src/main.yaml || die "Falta !secret wifi_password."
+grep -q '!secret display_key' src/main.yaml || die "Falta !secret display_key."
+grep -q '!secret display_ota' src/main.yaml || die "Falta !secret display_ota."
 
-grep -q 'platform: gt911' src/main.yaml     || die "src/main.yaml no declara GT911."
-
-grep -q 'platform: st7701s' src/main.yaml     || die "src/main.yaml no declara ST7701S."
-
-grep -q 'width: 480' src/main.yaml     || die "No se encontró width: 480 en src/main.yaml."
-
-grep -q 'height: 480' src/main.yaml     || die "No se encontró height: 480 en src/main.yaml."
-
-echo "[OK] LVGL declarado por ESPHome"
-echo "[OK] GT911 declarado por ESPHome"
-echo "[OK] ST7701S declarado por ESPHome"
-echo "[OK] 480x480 declarado por ESPHome"
-
-# Real validation of the YAML/component graph.
-echo
-echo "=== ESPHOME CONFIG CHECK ==="
-esphome config src/main.yaml
+echo "[OK] LVGL"
+echo "[OK] GT911"
+echo "[OK] ST7701S"
+echo "[OK] 480x480"
+echo "[OK] ESPHome !secret references"
+echo "[INFO] No se ejecuta 'esphome config' en BLOCK 1 porque faltan credenciales por diseño."
+echo "[INFO] Use BLOCK 2 para BUILD_MODE=real o BUILD_MODE=validate."
 
 # ------------------------------------------------------------
 # VERIFY PLATFORMIO 3C LAYER
@@ -251,23 +219,15 @@ esphome config src/main.yaml
 echo
 echo "=== VERIFY PLATFORMIO 3C LAYER ==="
 
-grep -Fq 'moononournation/GFX Library for Arduino@1.5.9' platformio.ini     || die "platformio.ini no declara GFX Library for Arduino 1.5.9."
-
-grep -Fq '#include <Arduino_GFX_Library.h>'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no usa Arduino_GFX_Library."
-
-grep -Fq '#include <WiFi.h>'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no usa WiFi.h."
-
-grep -Fq '#include <HTTPClient.h>'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no usa HTTPClient.h."
-
-grep -Fq '#include <Wire.h>'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no usa Wire.h/GT911."
-
-grep -Fq 'kTouchAddress = 0x5D'     platformio/src/panel_4848s040/main.cpp     || die "No se encontró la dirección I2C GT911 0x5D."
-
-grep -Fq 'kScreenWidth = 480'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no declara 480 px de ancho."
-
-grep -Fq 'kScreenHeight = 480'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no declara 480 px de alto."
-
-grep -Fq 'commandBuffer'     platformio/src/panel_4848s040/main.cpp     || die "El firmware 3C no usa commandBuffer."
+grep -Fq 'moononournation/GFX Library for Arduino@1.5.9' platformio.ini ||     die "platformio.ini no declara GFX Library for Arduino 1.5.9."
+grep -Fq '#include <Arduino_GFX_Library.h>' platformio/src/panel_4848s040/main.cpp ||     die "Falta Arduino_GFX_Library."
+grep -Fq '#include <WiFi.h>' platformio/src/panel_4848s040/main.cpp ||     die "Falta WiFi.h."
+grep -Fq '#include <HTTPClient.h>' platformio/src/panel_4848s040/main.cpp ||     die "Falta HTTPClient.h."
+grep -Fq '#include <Wire.h>' platformio/src/panel_4848s040/main.cpp ||     die "Falta Wire.h/GT911."
+grep -Fq 'kTouchAddress = 0x5D' platformio/src/panel_4848s040/main.cpp ||     die "Falta GT911 I2C 0x5D."
+grep -Fq 'kScreenWidth = 480' platformio/src/panel_4848s040/main.cpp ||     die "Falta ancho 480."
+grep -Fq 'kScreenHeight = 480' platformio/src/panel_4848s040/main.cpp ||     die "Falta alto 480."
+grep -Fq 'commandBuffer' platformio/src/panel_4848s040/main.cpp ||     die "Falta commandBuffer."
 
 echo "[OK] Arduino-GFX 1.5.9"
 echo "[OK] WiFi"
@@ -276,7 +236,6 @@ echo "[OK] Wire / GT911"
 echo "[OK] Panel 480x480"
 echo "[OK] commandBuffer / editor"
 
-# Resolve the actual PlatformIO dependency now.
 echo
 echo "=== PLATFORMIO DEPENDENCY RESOLUTION ==="
 pio pkg install -e panel_4848s040
@@ -288,20 +247,16 @@ pio pkg install -e panel_4848s040
 echo
 echo "=== VERIFY API / BACKEND / TESTS / CI ==="
 
-grep -Fq '/api/device/v1/health'     backend/device_api.py || die "Falta endpoint health en backend."
-
-grep -Fq '/api/device/v1/commands'     backend/device_api.py || die "Falta endpoint commands en backend."
-
-grep -Fq 'pending_confirmation'     backend/device_api.py || die "Falta pending_confirmation en backend."
-
-grep -Fq 'commandBuffer'     tests/test_command_editor_integration.py ||     die "No se encontró la integración de commandBuffer en los tests."
-
-grep -Fq '2.5'     README.md ||     die "README.md no documenta el polling objetivo de 2.5 s."
+grep -Fq '/api/device/v1/health' backend/device_api.py || die "Falta endpoint health."
+grep -Fq '/api/device/v1/commands' backend/device_api.py || die "Falta endpoint commands."
+grep -Fq 'pending_confirmation' backend/device_api.py || die "Falta pending_confirmation."
+grep -Fq 'commandBuffer' tests/test_command_editor_integration.py ||     die "Falta integración de commandBuffer en tests."
+grep -Fq '2.5' README.md || die "README.md no documenta polling de 2.5 s."
 
 echo "[OK] API v1"
 echo "[OK] pending_confirmation"
 echo "[OK] editor/commandBuffer tests"
-echo "[OK] polling 2.5 s documentado"
+echo "[OK] polling 2.5 s"
 echo "[OK] GitHub Actions"
 
 # ------------------------------------------------------------
@@ -327,43 +282,33 @@ EOF
 echo
 echo "[OK] .guition-env creado."
 
-# ------------------------------------------------------------
-# SUCCESS
-# ------------------------------------------------------------
-
 echo
 echo "============================================================"
 echo " BLOCK 1 SUCCESS"
 echo "============================================================"
-
 echo
 echo "Repositorio:"
 echo "  ${REPO_DIR}"
-
 echo
 echo "Venv:"
 echo "  ${VENV_DIR}"
-
 echo
 echo "ESPHome:"
 echo "  ${ESPHOME_VERSION}"
-
 echo
 echo "PlatformIO:"
 echo "  ${PLATFORMIO_VERSION}"
-
 echo
 echo "UI:"
 echo "  ESPHome + LVGL + ST7701S + GT911 + 480x480"
-
 echo
 echo "3C:"
 echo "  PlatformIO + Arduino-GFX + WiFi + HTTPClient + Wire"
-
 echo
 echo "Next:"
 echo "  cd ${REPO_DIR}"
 echo "  source .venv/bin/activate"
-echo "  pio test -e native"
-echo "  pio run -e panel_4848s040"
+echo "  ./scripts/02_pull_build_guition.sh --mode validate"
+echo "  # o, para compilación real:"
+echo "  ./scripts/02_pull_build_guition.sh --mode real"
 echo
