@@ -16,7 +16,7 @@ concurrency:
 jobs:
   firmware:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +31,16 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: BLOCK 2 - Validate ESPHome with temporary secrets
+        env:
+          BUILD_MODE: validate
+          BUILD_PLATFORMIO: "0"
+          SKIP_GIT_UPDATE: "1"
+        run: |
+          set -euo pipefail
+          chmod +x scripts/02_pull_build_guition.sh
+          ./scripts/02_pull_build_guition.sh --mode validate
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -38,6 +48,7 @@ jobs:
       - name: Reject local secrets
         run: |
           test ! -f include/local_config.h
+          test ! -f src/secrets.yaml
           ! git ls-files | grep -Ei 'credentials|service-account|\.env$'
 
       - name: Test Wi-Fi source contract
@@ -131,6 +142,7 @@ jobs:
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/test_command_buffer_native.cpp -o .ci/bin/command_buffer_native
           .ci/bin/command_buffer_native
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_command_text_viewport/test_main.cpp -o .ci/bin/command_text_viewport_test
+          test/test_command_text_viewport/test_main.cpp >/dev/null
           .ci/bin/command_text_viewport_test
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_virtual_keyboard/test_main.cpp -o .ci/bin/virtual_keyboard_hit_test
           .ci/bin/virtual_keyboard_hit_test
