@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN = (ROOT / "src" / "main.cpp").read_text(encoding="utf-8")
+MAIN = (ROOT / "platformio" / "src" / "panel_4848s040" / "main.cpp").read_text(encoding="utf-8")
 APP = (ROOT / "include" / "app_config.h").read_text(encoding="utf-8")
 PLATFORMIO = (ROOT / "platformio.ini").read_text(encoding="utf-8")
 
@@ -52,7 +52,7 @@ require(PLATFORMIO, "[env:panel_4848s040]", "panel_4848s040 environment")
 # No real credentials are allowed in tracked firmware source.
 tracked_source = "\n".join((ROOT / p).read_text(encoding="utf-8") for p in [
     "include/app_config.h",
-    "src/main.cpp",
+    "platformio/src/panel_4848s040/main.cpp",
 ])
 for forbidden in ["WIFI_PASSWORD_VALUE \"", "ESP32_API_TOKEN_VALUE \""]:
     if forbidden in tracked_source and forbidden not in APP:
