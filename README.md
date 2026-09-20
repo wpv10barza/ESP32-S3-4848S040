@@ -99,3 +99,48 @@
 ## 🤝 Thanks for your help
 - Thanks to [ZHNovell](https://github.com/ZHNovell) for financial support of the project, as well as for help with testing and ideas.
 - Thanks, [сlydebarrow](https://github.com/clydebarrow), [jesserockz](https://github.com/jesserockz), [ssieb](https://github.com/ssieb) for helping me with the project!
+
+---
+
+# Capas de validación añadidas en este fork
+
+Este repositorio conserva la base ESPHome/LVGL del proyecto original y añade una capa separada de validación PlatformIO/API.
+
+## Estado técnico
+
+| Requisito | Estado |
+|---|---|
+| GitHub Actions | ✅ `.github/workflows/ci.yml` |
+| Workflow PlatformIO/firmware | ✅ `pio test -e native` + `pio run -e esp32s3` |
+| Tests `test/` | ✅ command flow, command buffer, hit testing |
+| `platformio.ini` | ✅ native + ESP32-S3 |
+| `/api/device/v1/...` | ✅ health, commands, status, confirm/reject |
+| `pending_confirmation` + polling | ✅ flujo implementado; polling del firmware cada 2.5 s |
+| Bloqueo de comandos vacíos | ✅ firmware core + API E2E |
+| Validación física ESP32 | ⚠️ requiere runner self-hosted conectado al hardware |
+
+## API y confirmación humana
+
+El dispositivo publica una orden y recibe `pending_confirmation`. El dispositivo solamente consulta el estado; no ejecuta la confirmación por sí mismo.
+
+La transición a `applied` o `rejected` se realiza mediante la ruta de confirmación del backend, representando la aprobación humana. El servicio de prueba incluido en el repositorio no escribe en Google Sheets.
+
+Consulta `docs/api-e2e.md` y `docs/validation-matrix.md`.
+
+## PlatformIO
+
+El proyecto PlatformIO está separado del firmware ESPHome original:
+
+- `platformio.ini`
+- `platformio/src/`
+- `test/`
+
+Esto evita convertir `src/main.yaml` en una aplicación PlatformIO y mantiene intacta la interfaz LVGL/ST7701/GT911 del proyecto base.
+
+## Validación física
+
+Un runner GitHub alojado en la nube no puede demostrar que una placa ESP32-S3 física haya arrancado, que ST7701/GT911 respondan, ni que USB-C, audio, GPIO, PSRAM y alimentación estén estables.
+
+Para eso se añadió el workflow manual `.github/workflows/physical-validation.yml`, pensado para un runner **self-hosted** conectado físicamente a la placa. La evidencia se conserva como artefacto de logs serie.
+
+**No se marca como validación física hasta ejecutar ese workflow con hardware conectado.**
