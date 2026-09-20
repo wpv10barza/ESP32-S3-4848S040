@@ -22,8 +22,17 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio
-      - name: Run native tests
-        run: pio test -e native
+      - name: Run standalone native component tests
+        run: |
+          set -euo pipefail
+          mkdir -p .ci/bin
+          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/test_command_buffer_native.cpp -o .ci/bin/command_buffer_native
+          .ci/bin/command_buffer_native
+          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_command_text_viewport/test_main.cpp -o .ci/bin/command_text_viewport_test
+          .ci/bin/command_text_viewport_test
+          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_virtual_keyboard/test_main.cpp -o .ci/bin/virtual_keyboard_hit_test
+          .ci/bin/virtual_keyboard_hit_test
+          python test/command_buffer_regression.py
 
   esp32-build:
     name: PlatformIO ESP32-S3 build
@@ -48,5 +57,12 @@ jobs:
           python-version: "3.12"
       - name: Install test runner
         run: pip install pytest
-      - name: Run API E2E
-        run: pytest -q
+      - name: Run API and editor contract tests
+        run: |
+          set -euo pipefail
+          pytest -q tests/test_panel_state_contract.py tests/test_wifi_source.py tests/test_command_editor_integration.py
+          
+      - name: Note about real Monitor E2E
+        run: |
+          echo "Real Monitor device/API E2E is executed by .github/workflows/firmware-and-pages.yml"
+          echo "This CI job intentionally does not contact localhost:3000 without starting the real Monitor."
