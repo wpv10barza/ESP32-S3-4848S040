@@ -34,7 +34,7 @@ grep -Fq 'height: 480' src/main.yaml
 grep -Fq 'kTouchAddress = 0x5D' platformio/src/panel_4848s040/main.cpp
 grep -Fq 'commandBuffer' platformio/src/panel_4848s040/main.cpp
 grep -Fq '/api/device/v1/commands' platformio/src/panel_4848s040/main.cpp
-grep -Fq '2500UL' platformio/src/panel_4848s040/main.cpp
+grep -Fq 'commandPollMs = 2500UL' include/app_config.h
 
 # The firmware currently depends on exactly one external ESPHome component:
 # the i18n component from alaltitov/esphome, pinned to a commit rather than floating on @dev.
