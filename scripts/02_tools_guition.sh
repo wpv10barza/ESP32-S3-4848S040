@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# BLOCK 2 — install exact Python tools; safe to resume.
+# BLOCK 2 — install exact tools; safe to re-run after interruption.
 REPO_DIR="${REPO_DIR:-${HOME}/project/ESP32-S3-4848S040}"
 VENV_DIR="${REPO_DIR}/.venv"
 ESPHOME_VERSION="${ESPHOME_VERSION:-2026.8.2}"
@@ -18,14 +18,20 @@ if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
 fi
 
 source "${VENV_DIR}/bin/activate"
-python -m pip install --upgrade pip
-python -m pip install "esphome==${ESPHOME_VERSION}" "platformio==${PLATFORMIO_VERSION}"
 
-[[ "$(esphome version)" == *"${ESPHOME_VERSION}"* ]] || {
-  echo "[ERROR] ESPHome version mismatch."; exit 2;
-}
-pio --version | grep -Fq "6.2.0" || {
-  echo "[ERROR] PlatformIO version mismatch."; exit 2;
-}
+have_esphome=0
+if command -v esphome >/dev/null 2>&1 && esphome version | grep -Fq "${ESPHOME_VERSION}"; then
+  have_esphome=1
+fi
+(( have_esphome )) || python -m pip install "esphome==${ESPHOME_VERSION}"
+
+have_pio=0
+if command -v pio >/dev/null 2>&1 && pio --version | grep -Fq "${PLATFORMIO_VERSION}"; then
+  have_pio=1
+fi
+(( have_pio )) || python -m pip install "platformio==${PLATFORMIO_VERSION}"
+
+esphome version | grep -Fq "${ESPHOME_VERSION}" || { echo "[ERROR] ESPHome install failed."; exit 2; }
+pio --version | grep -Fq "${PLATFORMIO_VERSION}" || { echo "[ERROR] PlatformIO install failed."; exit 2; }
 
 printf '\n[OK] BLOCK 2 — ESPHome %s | PlatformIO %s\n' "${ESPHOME_VERSION}" "${PLATFORMIO_VERSION}"
