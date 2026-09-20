@@ -103,8 +103,14 @@ panel_4848s040
 Uploads the firmware and opens the serial monitor.
 
 ```bash
+# Auto-detecta /dev/ttyACM* o /dev/ttyUSB*
+bash scripts/06_flash_monitor_guition.sh
+
+# O indicar explícitamente el puerto real
 PORT=/dev/ttyACM0 bash scripts/06_flash_monitor_guition.sh
 ```
+
+`/dev/ttyS0` y otros `/dev/ttyS*` se rechazan porque son puertos serie heredados, no el USB serial del ESP32. Si no aparece `/dev/ttyACM*` o `/dev/ttyUSB*` en WSL, conecta el dispositivo USB a WSL antes de ejecutar el flash.
 
 ## Resume after the interruption you reported
 
