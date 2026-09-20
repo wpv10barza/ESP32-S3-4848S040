@@ -43,3 +43,4 @@ jobs:
           python tests/test_wifi_source.py
           python tests/test_command_editor_integration.py
           python test/command_buffer_regression.py
+          python tests/test_flash_port_contract.py
