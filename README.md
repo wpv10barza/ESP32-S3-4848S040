@@ -207,4 +207,8 @@ GitHub Actions calls the same validation mode with `BUILD_PLATFORMIO=0` so the `
 
 ### Upstream mirror status
 
-The ESPHome/LVGL base is synchronized from `alaltitov/Guition-ESP32-S3-4848S040` release branch `2026.8.2`. The fork keeps the complete upstream file tree and adds the 3C/API/CI layer on top.
+The ESPHome/LVGL base is synchronized from `alaltitov/Guition-ESP32-S3-4848S040` release branch `2026.8.2`.
+
+The repository's only remote ESPHome external component is `alaltitov/esphome` for `i18n`. The upstream `dev` branch currently carries the i18n implementation required by this firmware; its HEAD was verified as `1b487af0ef26ff8e7908d34e415d99cc13fc1f98` on 2026-09-19. The dependency is pinned to that exact commit in `src/main.yaml` instead of floating on `@dev`, improving build reproducibility without switching to the incompatible `main` component revision.
+
+The fork keeps the complete upstream file tree and adds the 3C/API/CI layer on top.
