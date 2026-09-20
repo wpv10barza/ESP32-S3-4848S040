@@ -4,3 +4,11 @@
 src/.esphome/
 src/secrets.yaml
 .DS_Store
+
+# PlatformIO
+.pio/
+.platformio/
+# Python test/cache
+__pycache__/
+.pytest_cache/
+*.pyc
