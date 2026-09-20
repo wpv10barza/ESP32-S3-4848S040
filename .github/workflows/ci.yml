@@ -55,13 +55,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install test runner
-        run: pip install pytest
-      - name: Run API and editor contract tests
+      - name: Run Python contract tests
         run: |
           set -euo pipefail
-          pytest -q tests/test_panel_state_contract.py tests/test_wifi_source.py tests/test_command_editor_integration.py
-          
+          python tests/test_panel_state_contract.py
+          python tests/test_wifi_source.py
+          python tests/test_command_editor_integration.py
+
       - name: Note about real Monitor E2E
         run: |
           echo "Real Monitor device/API E2E is executed by .github/workflows/firmware-and-pages.yml"
