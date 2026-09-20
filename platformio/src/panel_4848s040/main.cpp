@@ -341,12 +341,15 @@ bool initializeDisplay() {
     8, 20, 3, 46, 9, 10,
     4, 5, 6, 7, 15,
     1, 10, 8, 50,
-    1, 10, 8, 20);
+    1, 10, 8, 20,
+    0, 12000000, false, 0, 0, 0);
   Serial.println("DISPLAY: using Arduino-GFX ST7701 type8 init sequence");
+  // Match the Arduino-GFX reference for GUITION ESP32-4848S040 86BOX:
+  // ST7701 type9 init, rotation 1, 12 MHz RGB PCLK, big-endian RGB565 disabled.
   display = new Arduino_RGB_Display(
-    kScreenWidth, kScreenHeight, rgbPanel, 0, true,
+    kScreenWidth, kScreenHeight, rgbPanel, 1, true,
     displayBus, GFX_NOT_DEFINED,
-    st7701_type8_init_operations, sizeof(st7701_type8_init_operations));
+    st7701_type9_init_operations, sizeof(st7701_type9_init_operations));
   Serial.println("DISPLAY: calling display->begin()");
   if (!display->begin()) {
     Serial.println("DISPLAY: display->begin() FAILED");
@@ -358,7 +361,10 @@ bool initializeDisplay() {
   Serial.printf("DISPLAY: backlight GPIO %d PWM=%u\n", pins::backlight, app_config::panelBrightness);
   display->displayOn();
   Serial.println("DISPLAY: displayOn() OK");
+  displayReady = true;
   runDisplayDiagnostic();
+  drawPanel();
+  Serial.println("DISPLAY: first UI frame drawn");
   return true;
 }
 
@@ -391,8 +397,9 @@ TouchSample readTouch() {
     if (i2cRead(kTouchPointRegister, data, sizeof(data))) {
       const uint16_t rawX = data[1] | (static_cast<uint16_t>(data[2]) << 8);
       const uint16_t rawY = data[3] | (static_cast<uint16_t>(data[4]) << 8);
-      sample.x = rawX < kScreenWidth ? kScreenWidth - 1 - rawX : 0;
-      sample.y = rawY < kScreenHeight ? kScreenHeight - 1 - rawY : 0;
+      // Guition reference uses mirror_x=false / mirror_y=false.
+      sample.x = rawX < kScreenWidth ? rawX : kScreenWidth - 1;
+      sample.y = rawY < kScreenHeight ? rawY : kScreenHeight - 1;
       sample.touched = true;
     }
   }
@@ -702,7 +709,7 @@ void setup() {
 
   displayReady = initializeDisplay();
   if (!displayReady) Serial.println("No se pudo inicializar la pantalla ST7701.");
-  Wire.begin(pins::touchSda, pins::touchScl, 400000);
+  Wire.begin(pins::touchSda, pins::touchScl, 100000);
   audioReady = initializeAudio();
   commandBuffer.set(app_config::commandBuffer.c_str());
   updatePanel(PanelState::Booting, "Hardware inicializado");
