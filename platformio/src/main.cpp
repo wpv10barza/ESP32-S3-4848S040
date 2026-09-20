@@ -22,7 +22,8 @@ class Esp32Api final : public ICommandApi {
 
   ApiCommandResponse postCommand(const std::string& command) override {
     HTTPClient http;
-    http.begin(base_url_ + "/api/device/v1/commands");
+    const std::string url = base_url_ + "/api/device/v1/commands";
+    http.begin(url.c_str());
     http.addHeader("Content-Type", "application/json");
     const std::string payload =
         "{\"device_id\":\"ESP32-S3-4848S040\",\"command\":\"" +
@@ -36,7 +37,8 @@ class Esp32Api final : public ICommandApi {
 
   ApiCommandResponse getCommand(const std::string& command_id) override {
     HTTPClient http;
-    http.begin(base_url_ + "/api/device/v1/commands/" + command_id);
+    const std::string url = base_url_ + "/api/device/v1/commands/" + command_id;
+    http.begin(url.c_str());
     const int code = http.GET();
     const String body = http.getString();
     http.end();
