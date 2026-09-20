@@ -36,7 +36,14 @@ grep -Fq 'commandBuffer' platformio/src/panel_4848s040/main.cpp
 grep -Fq '/api/device/v1/commands' platformio/src/panel_4848s040/main.cpp
 grep -Fq '2500UL' platformio/src/panel_4848s040/main.cpp
 
+# The firmware currently depends on exactly one external ESPHome component:
+# the i18n component from alaltitov/esphome, pinned to a commit rather than floating on @dev.
+grep -Fq 'external_components:' src/main.yaml
+test "$(grep -Fc 'github://alaltitov/esphome@' src/main.yaml)" -eq 1
+test "$(grep -Fc 'components: [i18n]' src/main.yaml)" -eq 1
+
 ! grep -Fq 'github://alaltitov/esphome@dev' src/main.yaml
 ! grep -Fq 'lvgl/lvgl' platformio.ini
+! grep -Fq '/dev/ttyS0' scripts/06_flash_monitor_guition.sh
 
-printf '\n[OK] BLOCK 3 — LVGL + GT911 + ST7701S + 3C contracts valid.\n'
+printf '\n[OK] BLOCK 3 — LVGL + GT911 + ST7701S + 3C + pinned ESPHome component + physical port guards valid.\n'
