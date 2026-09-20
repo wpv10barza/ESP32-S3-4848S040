@@ -138,13 +138,20 @@ if [ "${SKIP_GIT_UPDATE}" != "1" ]; then
     }
 
     git fetch --prune --tags origin
-    git checkout "${REPO_REF}" >/dev/null 2>&1 || die "Could not checkout ${REPO_REF}."
 
     if ! git diff --quiet || ! git diff --cached --quiet; then
         die "Working tree has local changes. Commit/stash them before BLOCK 2."
     fi
 
-    git pull --ff-only origin "${REPO_REF}"
+    if git show-ref --verify --quiet "refs/remotes/origin/${REPO_REF}"; then
+        git switch "${REPO_REF}" >/dev/null 2>&1 ||             git switch -C "${REPO_REF}" "origin/${REPO_REF}"
+        git reset --hard "origin/${REPO_REF}"
+        git pull --ff-only origin "${REPO_REF}"
+    elif git rev-parse --verify --quiet "refs/tags/${REPO_REF}"; then
+        git checkout --detach "refs/tags/${REPO_REF}"
+    else
+        die "No existe la rama ni el tag '${REPO_REF}' en ${REPO_URL}."
+    fi
 else
     echo "[INFO] SKIP_GIT_UPDATE=1: using the checked-out CI workspace." | tee -a "${LOG_FILE}"
 fi
@@ -202,6 +209,10 @@ echo | tee -a "${LOG_FILE}"
 echo "=== VERIFY PLATFORMIO 3C REFERENCES ===" | tee -a "${LOG_FILE}"
 
 grep -Fq 'moononournation/GFX Library for Arduino@1.5.9' "${REPO_DIR}/platformio.ini" ||     die "GFX Library for Arduino 1.5.9 is missing."
+
+if grep -Fq 'lvgl/lvgl' "${REPO_DIR}/platformio.ini"; then
+    die "LVGL no debe añadirse a lib_deps de PlatformIO: la UI principal LVGL pertenece a ESPHome."
+fi
 
 for include in     '#include <Arduino_GFX_Library.h>'     '#include <WiFi.h>'     '#include <HTTPClient.h>'     '#include <Wire.h>'
 do
@@ -301,6 +312,10 @@ if [ "${BUILD_PLATFORMIO}" = "1" ]; then
 
     pio pkg install --environment panel_4848s040 2>&1 | tee -a "${LOG_FILE}"
     pio run --environment panel_4848s040 2>&1 | tee -a "${LOG_FILE}"
+
+    PIO_BUILD_DIR="${REPO_DIR}/.pio/build/panel_4848s040"
+    [ -f "${PIO_BUILD_DIR}/firmware.bin" ] ||         die "PlatformIO no produjo ${PIO_BUILD_DIR}/firmware.bin."
+    echo "[OK] PlatformIO firmware.bin: ${PIO_BUILD_DIR}/firmware.bin" | tee -a "${LOG_FILE}"
 else
     echo | tee -a "${LOG_FILE}"
     echo "[INFO] BUILD_PLATFORMIO=0: PlatformIO build skipped." | tee -a "${LOG_FILE}"
@@ -330,6 +345,13 @@ echo "  ${BUILD_MODE}"
 echo
 echo "Log:"
 echo "  ${LOG_FILE}"
+echo
+echo "Built layers:"
+echo "  ESPHome: LVGL + GT911 + ST7701S + 480x480"
+if [ "${BUILD_PLATFORMIO}" = "1" ]; then
+    echo "  PlatformIO: 3C + Arduino-GFX + Wi-Fi + HTTP + GT911 I2C"
+fi
+
 echo
 echo "Next:"
 echo "  ./scripts/flash-panel.sh"
