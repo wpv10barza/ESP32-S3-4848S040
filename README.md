@@ -129,6 +129,28 @@ PORT=/dev/ttyACM0 bash scripts/06_flash_monitor_guition.sh
 
 Block 2 first checks whether the requested versions are already installed. If PlatformIO 6.2.0 was not completed, it installs it; if it is already present, it skips the reinstall.
 
+## Upstream Guition sync
+
+The repository includes the complete Guition source tree from `alaltitov/Guition-ESP32-S3-4848S040` branch `2026.8.2`, synced from commit `1c5143b1204e5acb337f3487cfba69ad4a72abe3`. The sync contains all 152 upstream file blobs; this repository also keeps the 3C/backend/CI additions on top.
+
+The upstream ESPHome configuration uses one external component, `i18n`, from `alaltitov/esphome@dev`. This repository pins it to the verified commit `1b487af0ef26ff8e7908d34e415d99cc13fc1f98` for reproducible builds.
+
+## Physical flash from WSL2
+
+Do not use `/dev/ttyS0` for the ESP32-S3 USB upload path. Block 6 rejects `/dev/ttyS*` and searches, in order, for `/dev/serial/by-id/*`, `/dev/ttyACM*`, and `/dev/ttyUSB*`.
+
+From WSL:
+
+```bash
+cd ~/project/ESP32-S3-4848S040
+bash scripts/02_tools_guition.sh
+bash scripts/03_verify_guition.sh
+bash scripts/05_platformio_guition.sh
+PORT=/dev/ttyACM0 bash scripts/06_flash_monitor_guition.sh
+```
+
+For a stable device path, prefer `PORT=/dev/serial/by-id/...`. If no serial device appears in WSL2, attach the USB device to WSL first and then verify it with `lsusb` and `pio device list`.
+
 ## API flow
 
 ```text
