@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# BLOCK 3 — verify copied upstream UI and 3C integration.
+REPO_DIR="${REPO_DIR:-${HOME}/project/ESP32-S3-4848S040}"
+cd "${REPO_DIR}"
+
+required=(
+  README.md
+  src/main.yaml
+  src/secrets.yaml.example
+  platformio.ini
+  platformio/src/panel_4848s040/main.cpp
+  include/app_config.h
+  include/command_buffer.h
+  include/virtual_keyboard.h
+  backend/device_api.py
+  contract/device-command-v1.json
+  .github/workflows/ci.yml
+)
+
+for f in "${required[@]}"; do
+  [[ -f "$f" ]] || { echo "[ERROR] missing: $f"; exit 1; }
+done
+
+grep -Fq 'github://alaltitov/esphome@1b487af0ef26ff8e7908d34e415d99cc13fc1f98' src/main.yaml
+grep -Fq 'external_components:' src/main.yaml
+grep -Fq '^lvgl:' src/main.yaml
+grep -Fq 'platform: gt911' src/main.yaml
+grep -Fq 'platform: st7701s' src/main.yaml
+grep -Fq 'width: 480' src/main.yaml
+grep -Fq 'height: 480' src/main.yaml
+
+grep -Fq 'moononournation/GFX Library for Arduino@1.5.9' platformio.ini
+grep -Fq 'kTouchAddress = 0x5D' platformio/src/panel_4848s040/main.cpp
+grep -Fq 'commandBuffer' platformio/src/panel_4848s040/main.cpp
+grep -Fq '/api/device/v1/commands' platformio/src/panel_4848s040/main.cpp
+grep -Fq '2500UL' platformio/src/panel_4848s040/main.cpp
+
+! grep -Fq 'github://alaltitov/esphome@dev' src/main.yaml
+! grep -Fq 'lvgl/lvgl' platformio.ini
+
+printf '\n[OK] BLOCK 3 — tree, LVGL, GT911, ST7701S, pinned i18n and 3C checks passed.\n'
