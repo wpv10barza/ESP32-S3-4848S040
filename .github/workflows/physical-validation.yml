@@ -23,17 +23,17 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
       - name: Build firmware
-        run: pio run -e esp32s3
+        run: pio run -e panel_4848s040
       - name: Flash firmware
         env:
           SERIAL_PORT: ${{ inputs.serial_port }}
-        run: pio run -e esp32s3 -t upload --upload-port "$SERIAL_PORT"
+        run: pio run -e panel_4848s040 -t upload --upload-port "$SERIAL_PORT"
       - name: Capture serial boot log
         env:
           SERIAL_PORT: ${{ inputs.serial_port }}
         run: |
           set +e
-          timeout 45s pio device monitor -e esp32s3 --port "$SERIAL_PORT" --baud 115200 > physical-boot.log 2>&1
+          timeout 45s pio device monitor -e panel_4848s040 --port "$SERIAL_PORT" --baud 115200 > physical-boot.log 2>&1
           status=$?
           cat physical-boot.log
           test "$status" = "124"
