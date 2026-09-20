@@ -22,6 +22,13 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio
+      - name: Validate Bash scripts
+        run: |
+          set -euo pipefail
+          bash -n scripts/01_bootstrap_guition.sh
+          bash -n scripts/02_pull_build_guition.sh
+          bash -n scripts/flash-panel.sh
+
       - name: Run standalone native component tests
         run: |
           set -euo pipefail
