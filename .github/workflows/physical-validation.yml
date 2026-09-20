@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       serial_port:
-        description: "Serial port on the self-hosted runner (for example /dev/ttyACM0)"
+        description: "Serial port on the self-hosted runner (for example /dev/ttyACM0 or /dev/serial/by-id/...)"
         required: true
         type: string
 
@@ -24,6 +24,22 @@ jobs:
         run: pip install platformio
       - name: Build firmware
         run: pio run -e panel_4848s040
+      - name: Validate physical serial port
+        env:
+          SERIAL_PORT: ${{ inputs.serial_port }}
+        run: |
+          set -Eeuo pipefail
+          case "${SERIAL_PORT}" in
+            /dev/ttyS*)
+              echo "::error::Refusing legacy serial port ${SERIAL_PORT}. Use /dev/serial/by-id/... or /dev/ttyACM* /dev/ttyUSB*."
+              exit 20
+              ;;
+          esac
+          test -c "${SERIAL_PORT}" || {
+            echo "::error::Serial device ${SERIAL_PORT} is not present on the self-hosted runner."
+            pio device list || true
+            exit 21
+          }
       - name: Flash firmware
         env:
           SERIAL_PORT: ${{ inputs.serial_port }}
