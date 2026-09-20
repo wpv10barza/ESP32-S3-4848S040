@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = (ROOT / "include" / "app_config.h").read_text(encoding="utf-8")
-MAIN = (ROOT / "src" / "main.cpp").read_text(encoding="utf-8")
+MAIN = (ROOT / "platformio" / "src" / "panel_4848s040" / "main.cpp").read_text(encoding="utf-8")
 
 
 def test_command_buffer_is_runtime_source():
