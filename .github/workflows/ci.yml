@@ -25,9 +25,19 @@ jobs:
       - name: Validate Bash scripts
         run: |
           set -euo pipefail
-          bash -n scripts/01_bootstrap_guition.sh
-          bash -n scripts/02_pull_build_guition.sh
-          bash -n scripts/flash-panel.sh
+          for f in \
+            scripts/01_clone_guition.sh \
+            scripts/02_tools_guition.sh \
+            scripts/03_verify_guition.sh \
+            scripts/04_esphome_guition.sh \
+            scripts/05_platformio_guition.sh \
+            scripts/06_flash_monitor_guition.sh \
+            scripts/01_bootstrap_guition.sh \
+            scripts/02_pull_build_guition.sh \
+            scripts/flash-panel.sh
+          do
+            bash -n "$f"
+          done
 
       - name: Run standalone native component tests
         run: |
