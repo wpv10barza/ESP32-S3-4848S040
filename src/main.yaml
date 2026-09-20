@@ -20,7 +20,9 @@ http_request:
   verify_ssl: false
 
 external_components:
-  - source: github://alaltitov/esphome@dev
+  # Pinned for reproducibility: alaltitov/esphome dev HEAD verified 2026-09-19.
+  # main is not configuration-compatible because this firmware uses dev-only i18n options.
+  - source: github://alaltitov/esphome@1b487af0ef26ff8e7908d34e415d99cc13fc1f98
     components: [i18n]
 
 
