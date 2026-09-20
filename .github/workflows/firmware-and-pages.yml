@@ -142,7 +142,6 @@ jobs:
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/test_command_buffer_native.cpp -o .ci/bin/command_buffer_native
           .ci/bin/command_buffer_native
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_command_text_viewport/test_main.cpp -o .ci/bin/command_text_viewport_test
-          test/test_command_text_viewport/test_main.cpp >/dev/null
           .ci/bin/command_text_viewport_test
           g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_virtual_keyboard/test_main.cpp -o .ci/bin/virtual_keyboard_hit_test
           .ci/bin/virtual_keyboard_hit_test
