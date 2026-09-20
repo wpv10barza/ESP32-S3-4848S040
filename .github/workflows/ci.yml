@@ -39,16 +39,15 @@ jobs:
             bash -n "$f"
           done
 
-      - name: Run standalone native component tests
+      - name: Run PlatformIO native tests
+        run: pio test -e native
+
+      - name: Run Python integration contracts
         run: |
           set -euo pipefail
-          mkdir -p .ci/bin
-          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude tests/test_command_buffer_native.cpp -o .ci/bin/command_buffer_native
-          .ci/bin/command_buffer_native
-          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_command_text_viewport/test_main.cpp -o .ci/bin/command_text_viewport_test
-          .ci/bin/command_text_viewport_test
-          g++ -std=c++17 -Wall -Wextra -Werror -Iinclude test/test_virtual_keyboard/test_main.cpp -o .ci/bin/virtual_keyboard_hit_test
-          .ci/bin/virtual_keyboard_hit_test
+          python tests/test_panel_state_contract.py
+          python tests/test_wifi_source.py
+          python tests/test_command_editor_integration.py
           python test/command_buffer_regression.py
 
   esp32-build:
@@ -78,6 +77,7 @@ jobs:
           python tests/test_panel_state_contract.py
           python tests/test_wifi_source.py
           python tests/test_command_editor_integration.py
+          python test/command_buffer_regression.py
 
       - name: Note about real Monitor E2E
         run: |
