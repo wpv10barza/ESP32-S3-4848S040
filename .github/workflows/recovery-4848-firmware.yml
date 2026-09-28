@@ -33,8 +33,12 @@ jobs:
           grep -Fq 'EDITAR ORDEN 3C' platformio/src/panel_4848s040/main.cpp
           grep -Fq 'CANCELAR' platformio/src/panel_4848s040/main.cpp
           grep -Fq 'KeyboardMode::Alpha' platformio/src/panel_4848s040/main.cpp
-          grep -Fq 'KeyboardMode::Numeric' include/virtual_keyboard.h
-          grep -Fq 'QWERTYUIOP' include/virtual_keyboard.h
+          grep -Fq 'NumericSymbols' include/virtual_keyboard.h
+          grep -Fq 'kAlphaRow0' include/virtual_keyboard.h
+          grep -Fq '{KeyKind::Character, "Q"' include/virtual_keyboard.h
+          grep -Fq '{KeyKind::Character, "P"' include/virtual_keyboard.h
+          grep -Fq '{KeyKind::ToggleAlphaNumeric, "123"' include/virtual_keyboard.h
+          grep -Fq '{KeyKind::ToggleAlphaNumeric, "ABC"' include/virtual_keyboard.h
           grep -Fq 'default_envs = panel_4848s040' platformio.ini
           grep -Fq '[env:panel_4848s040]' platformio.ini
           grep -Fq 'BOARD_PANEL_4848S040=1' platformio.ini
