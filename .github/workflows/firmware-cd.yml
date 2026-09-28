@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # For recovery PRs, compile the PR head itself instead of GitHub's synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Checkout Asistente 3C Monitor
         uses: actions/checkout@v4
@@ -123,7 +126,8 @@ jobs:
           cp .pio/build/panel_4848s040/firmware.elf dist/
           printf '%s\n'             '0x0000 bootloader.bin'             '0x8000 partitions.bin'             '0x10000 firmware.bin' > dist/flash-layout.txt
           (cd dist && sha256sum * > SHA256SUMS.txt)
-          printf '{"source_sha":"%s","environment":"panel_4848s040","validation":"compiled_not_physically_flashed"}\n' "${GITHUB_SHA}" > dist/manifest.json
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          printf '{"source_sha":"%s","environment":"panel_4848s040","validation":"compiled_not_physically_flashed"}\n' "${SOURCE_SHA}" > dist/manifest.json
 
       - uses: actions/upload-artifact@v4
         with:
