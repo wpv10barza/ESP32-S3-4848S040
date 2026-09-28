@@ -1,0 +1,74 @@
+name: Recovery 4848 Firmware
+
+on:
+  push:
+    branches:
+      - recovery/2026-09-19-4848-ui-keyboard-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-firmware:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact recovery commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: python -m pip install "platformio==6.2.0"
+
+      - name: Verify 4848 UI contracts
+        run: |
+          grep -Fq 'PROBAR WSL' platformio/src/panel_4848s040/main.cpp
+          grep -Fq 'ENVIAR 3C' platformio/src/panel_4848s040/main.cpp
+          grep -Fq 'EDITAR ORDEN 3C' platformio/src/panel_4848s040/main.cpp
+          grep -Fq 'CANCELAR' platformio/src/panel_4848s040/main.cpp
+          grep -Fq 'KeyboardMode::Alpha' platformio/src/panel_4848s040/main.cpp
+          grep -Fq 'KeyboardMode::Numeric' include/virtual_keyboard.h
+          grep -Fq 'QWERTYUIOP' include/virtual_keyboard.h
+          grep -Fq 'default_envs = panel_4848s040' platformio.ini
+          grep -Fq '[env:panel_4848s040]' platformio.ini
+          grep -Fq 'BOARD_PANEL_4848S040=1' platformio.ini
+
+      - name: Native contract tests
+        run: |
+          python tests/test_panel_state_contract.py
+          python tests/test_wifi_source.py
+          python tests/test_command_editor_integration.py
+          python test/command_buffer_regression.py
+
+      - name: Build panel_4848s040
+        run: |
+          pio test -e native
+          pio run -e panel_4848s040
+
+      - name: Package verified recovery firmware
+        run: |
+          mkdir -p dist
+          cp .pio/build/panel_4848s040/firmware.bin dist/
+          cp .pio/build/panel_4848s040/bootloader.bin dist/
+          cp .pio/build/panel_4848s040/partitions.bin dist/
+          cp .pio/build/panel_4848s040/firmware.elf dist/
+          printf '%s\n' \
+            '0x0000 bootloader.bin' \
+            '0x8000 partitions.bin' \
+            '0x10000 firmware.bin' > dist/flash-layout.txt
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          printf '{"source_sha":"%s","historical_firmware_base":"5e01cc1a25ca9c27ad659a23c914eec6bacefe34","environment":"panel_4848s040","ui_contract":"keyboard_buttons_verified","validation":"compiled_not_physically_flashed"}\n' "$SOURCE_SHA" > dist/manifest.json
+          (cd dist && sha256sum bootloader.bin partitions.bin firmware.bin firmware.elf flash-layout.txt manifest.json > SHA256SUMS.txt)
+
+      - name: Upload recovery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-2026-09-19-esp32-s3-4848s040
+          path: dist/
+          if-no-files-found: error
