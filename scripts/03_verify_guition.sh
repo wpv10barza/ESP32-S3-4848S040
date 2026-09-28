@@ -34,7 +34,7 @@ grep -Fq 'height: 480' src/main.yaml
 grep -Fq 'kTouchAddress = 0x5D' platformio/src/panel_4848s040/main.cpp
 grep -Fq 'commandBuffer' platformio/src/panel_4848s040/main.cpp
 grep -Fq '/api/device/v1/commands' platformio/src/panel_4848s040/main.cpp
-grep -Fq '2500UL' platformio/src/panel_4848s040/main.cpp
+grep -Fq 'commandPollMs = 2500UL' include/app_config.h
 # Physical Guition 86BOX display/touch parity contract.
 grep -Fq 'st7701_type9_init_operations' platformio/src/panel_4848s040/main.cpp
 grep -Fq 'kScreenWidth, kScreenHeight, rgbPanel, 1, true' platformio/src/panel_4848s040/main.cpp
